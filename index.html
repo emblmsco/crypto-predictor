@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Predictor</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lien vers FontAwesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Crypto Predictor</h1>
+            <p>Surveillez les opportunités de trading en temps réel.</p>
+        </header>
+
+        <main>
+            <!-- Section du graphique -->
+            <section class="chart-section">
+                <h2>Évolution du prix</h2>
+                <canvas id="priceChart" width="400" height="200"></canvas>
+            </section>
+
+            <!-- Section des résultats de prédiction -->
+            <section class="prediction-section">
+                <h2>Résultat de la prédiction</h2>
+                <div class="prediction-details">
+                    <p><strong>Symbole :</strong> <span id="symbolResult">-</span></p>
+                    <p><strong>Prix prédit :</strong> <span id="predictedPriceResult">-</span></p>
+                    <p><strong>Prix actuel :</strong> <span id="actualPriceResult">-</span></p>
+                    <p><strong>Changement :</strong> <span id="changeResult">-</span></p>
+                    <p><strong>Probabilité :</strong> <span id="probabilityResult">-</span></p>
+                    <p><strong>Action :</strong> 
+                        <span id="actionResult">-</span>
+                        <i id="arrowIcon" class="fas fa-arrow-up" style="display: none;"></i> <!-- Icône de flèche toujours visible -->
+                    </p>
+                </div>
+            </section>
+
+            <!-- Section de prédiction manuelle -->
+            <section class="manual-prediction">
+                <h2>Prédiction manuelle</h2>
+                <form id="predictionForm">
+                    <label for="symbol">Symbole :</label>
+                    <input type="text" id="symbol" name="symbol" value="BTCUSDT" required>
+                    <button type="submit">Obtenir la prédiction</button>
+                    <span id="loadingIndicator" style="display: none;">
+                        <span class="spinner"></span> Chargement...
+                    </span>
+                </form>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2023 Crypto Predictor. Tous droits réservés.</p>
+        </footer>
+    </div>
+
+    <!-- Script JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
