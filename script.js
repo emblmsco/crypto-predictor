@@ -3,18 +3,26 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById('arrowIcon').style.display = 'none';
 });
 
-// Configuration du graphique
-const ctx = document.getElementById('priceChart').getContext('2d');
-const priceChart = new Chart(ctx, {
+// Configuration du graphique des prédictions
+const predictionCtx = document.getElementById('predictionChart').getContext('2d');
+const predictionChart = new Chart(predictionCtx, {
     type: 'line',
     data: {
         labels: [], // Étiquettes de temps
-        datasets: [{
-            label: 'Prix de clôture',
-            data: [], // Données de prix
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1
-        }]
+        datasets: [
+            {
+                label: 'Prix prédit',
+                data: [], // Données de prix prédit
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'Prix actuel',
+                data: [], // Données de prix actuel
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }
+        ]
     },
     options: {
         responsive: true,
@@ -26,67 +34,80 @@ const priceChart = new Chart(ctx, {
 });
 
 // Fonction pour mettre à jour le graphique
-function updateChart(labels, data) {
-    priceChart.data.labels = labels;
-    priceChart.data.datasets[0].data = data;
-    priceChart.update();
+function updateChart(labels, predictedPrices, actualPrices) {
+    // Vérifier que les données sont valides
+    if (!Array.isArray(predictedPrices) || !Array.isArray(actualPrices)) {
+        console.error("Données invalides pour la mise à jour du graphique :", { predictedPrices, actualPrices });
+        return;
+    }
+
+    // Mettre à jour les données du graphique
+    predictionChart.data.labels = labels;
+    predictionChart.data.datasets[0].data = predictedPrices;
+    predictionChart.data.datasets[1].data = actualPrices;
+    predictionChart.update();
 }
 
-// Variable pour stocker la connexion SSE
-let eventSource = null;
+// Fonction pour récupérer les données de prédiction
+function fetchPredictionData(symbol) {
+    // Afficher l'indicateur de chargement
+    document.getElementById('loadingIndicator').style.display = 'inline';
+
+    // Masquer l'indicateur de chargement après un délai (par exemple, 60 secondes)
+    const loadingTimeout = setTimeout(function () {
+        document.getElementById('loadingIndicator').style.display = 'none';
+        alert("Le chargement a pris trop de temps. Veuillez réessayer.");
+    }, 60000); // 60 secondes
+
+    // Récupérer les données de prédiction
+    fetch(`http://192.168.1.67:8000/updates/${symbol}`)
+        .then(response => response.json())
+        .then(data => {
+            // Masquer l'indicateur de chargement
+            document.getElementById('loadingIndicator').style.display = 'none';
+            clearTimeout(loadingTimeout); // Annuler le timeout
+
+            // Convertir le changement et la probabilité en pourcentage
+            const changePercentage = (data.change * 100).toFixed(2) + "%";
+            const probabilityPercentage = (data.probability * 100).toFixed(2) + "%";
+
+            // Mettre à jour le graphique et les résultats
+            updateChart(data.historical_data.labels, data.historical_data.predicted_prices, data.historical_data.actual_prices);
+            document.getElementById('symbolResult').textContent = data.symbol;
+            document.getElementById('predictedPriceResult').textContent = data.predicted_price.toFixed(2);
+            document.getElementById('actualPriceResult').textContent = data.actual_price.toFixed(2);
+            document.getElementById('changeResult').textContent = changePercentage;
+            document.getElementById('probabilityResult').textContent = probabilityPercentage;
+            document.getElementById('actionResult').textContent = data.action;
+
+            // Mettre à jour la flèche
+            updateArrow(data.action, data.probability, data.change);
+
+            // Afficher une notification si l'action est "Acheter" ou "Vendre"
+            if (data.action !== "Attendre") {
+                showNotification(data.action);
+            }
+        })
+        .catch(error => {
+            console.error("Erreur lors de la récupération des données :", error);
+            document.getElementById('loadingIndicator').style.display = 'none';
+            clearTimeout(loadingTimeout); // Annuler le timeout
+            alert("Erreur lors de la récupération des données. Veuillez réessayer.");
+        });
+}
 
 // Gestion de la soumission du formulaire
 document.getElementById('predictionForm').addEventListener('submit', function (event) {
     event.preventDefault();
     const symbol = document.getElementById('symbol').value;
 
-    // Afficher l'indicateur de chargement
-    document.getElementById('loadingIndicator').style.display = 'inline';
+    // Récupérer les données immédiatement
+    fetchPredictionData(symbol);
 
-    // Fermer la connexion SSE existante
-    if (eventSource) {
-        eventSource.close();
-    }
-
-    // Ouvrir une nouvelle connexion SSE
-    eventSource = new EventSource(`http://192.168.1.67:8000/updates/${symbol}`);
-
-    // Gestion des messages reçus
-    eventSource.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-
-        // Masquer l'indicateur de chargement
-        document.getElementById('loadingIndicator').style.display = 'none';
-
-        // Convertir le changement et la probabilité en pourcentage
-        const changePercentage = (data.change * 100).toFixed(2) + "%";
-        const probabilityPercentage = (data.probability * 100).toFixed(2) + "%";
-
-        // Mettre à jour le graphique et les résultats
-        updateChart(data.historical_data.labels, data.historical_data.prices);
-        document.getElementById('symbolResult').textContent = data.symbol;
-        document.getElementById('predictedPriceResult').textContent = data.predicted_price.toFixed(2);
-        document.getElementById('actualPriceResult').textContent = data.actual_price.toFixed(2);
-        document.getElementById('changeResult').textContent = changePercentage;
-        document.getElementById('probabilityResult').textContent = probabilityPercentage;
-        document.getElementById('actionResult').textContent = data.action;
-
-        // Mettre à jour la flèche
-        updateArrow(data.action, data.probability, data.change);
-
-        // Afficher une notification si l'action est "Acheter" ou "Vendre"
-        if (data.action !== "Attendre") {
-            showNotification(data.action);
-        }
-    };
-
-    // Gestion des erreurs SSE
-    eventSource.onerror = function(error) {
-        console.error("Erreur SSE :", error);
-        eventSource.close();
-        document.getElementById('loadingIndicator').style.display = 'none';
-        alert("La connexion au serveur a été perdue. Veuillez réessayer.");
-    };
+    // Mettre à jour les données toutes les 15 minutes
+    setInterval(() => {
+        fetchPredictionData(symbol);
+    }, 15 * 60 * 1000); // 15 minutes en millisecondes
 });
 
 // Fonction pour mettre à jour la flèche
