@@ -49,7 +49,7 @@ document.getElementById('predictionForm').addEventListener('submit', function (e
     }
 
     // Ouvrir une nouvelle connexion SSE
-    eventSource = new EventSource(`http://192.168.1.67:8000/updates/${symbol}`);
+    eventSource = new EventSource(`http://192.168.1.68:8000/updates/${symbol}`);
 
     // Gestion des messages reçus
     eventSource.onmessage = function(event) {
