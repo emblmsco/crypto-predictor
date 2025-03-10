@@ -58,18 +58,16 @@ document.getElementById('predictionForm').addEventListener('submit', function (e
         // Masquer l'indicateur de chargement
         document.getElementById('loadingIndicator').style.display = 'none';
 
-        // Convertir le changement et la probabilité en pourcentage
-        const changePercentage = (data.change * 100).toFixed(2) + "%";
-        const probabilityPercentage = (data.probability * 100).toFixed(2) + "%";
-
-        // Mettre à jour le graphique et les résultats
-        updateChart(data.historical_data.labels, data.historical_data.prices);
+        // Mettre à jour les résultats
         document.getElementById('symbolResult').textContent = data.symbol;
         document.getElementById('predictedPriceResult').textContent = data.predicted_price.toFixed(2);
         document.getElementById('actualPriceResult').textContent = data.actual_price.toFixed(2);
-        document.getElementById('changeResult').textContent = changePercentage;
-        document.getElementById('probabilityResult').textContent = probabilityPercentage;
+        document.getElementById('changeResult').textContent = (data.change * 100).toFixed(2) + "%";
+        document.getElementById('probabilityResult').textContent = (data.probability * 100).toFixed(2) + "%";
         document.getElementById('actionResult').textContent = data.action;
+
+        // Mettre à jour le graphique
+        updateChart(data.historical_data.labels, data.historical_data.prices);
 
         // Mettre à jour la flèche
         updateArrow(data.action, data.probability, data.change);
